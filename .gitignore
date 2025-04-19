@@ -1,0 +1,17 @@
+# Abaikan virtual environment
+env/
+.venv/
+ENV/
+.VENV/
+.ENV/
+
+# Abaikan direktori konfigurasi editor
+.vscode/
+
+# Abaikan file cache Python
+__pycache__/
+*.py[cod]
+
+# Abaikan file hasil model dan training
+*.keras
+*.pkl
