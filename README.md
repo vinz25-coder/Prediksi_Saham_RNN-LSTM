@@ -47,11 +47,17 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance** (https
 ---
 ## Installation: 
 - Clone the repository:
-   - git clone https://github.com/vinz25-coder/Prediksi_Saham_RNN-LSTM.git
+   ```bash
+   git clone https://github.com/vinz25-coder/Prediksi_Saham_RNN-LSTM.git
+   ```
 - Install the required dependencies:
-   - pip install -r requirements.txt
+  ```bash
+  pip install -r requirements.txt
+  ```
 - Run the Streamlit app:
-   - streamlit run main.py
+  ```bash
+  streamlit run main.py
+  ```
 
 ---
 ## Important Requirements:
