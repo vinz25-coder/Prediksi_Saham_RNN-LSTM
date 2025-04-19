@@ -46,7 +46,6 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance** (https
 
 ---
 ## Installation: 
-   Langkah - langkah instalasi virtual environment :
 - Clone the repository:
    - git clone https://github.com/vinz25-coder/Prediksi_Saham_RNN-LSTM.git
 - Install the required dependencies:
