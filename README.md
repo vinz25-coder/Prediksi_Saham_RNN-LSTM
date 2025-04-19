@@ -1,6 +1,6 @@
 # Prediksi Harga Penutupan Emiten Saham PT. Bank Rakyat Indonesia (Persero) Tbk. (BBRI) Dengan Recurrent Neural Network (RNN) dan Long Short-Term Memory (LSTM)
 
-Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance** (https://finance.yahoo.com/). Model prediktif dijalankan dan diubah menjadi sebuah aplikasi web interaktif yaitu Streamlit yang memungkinkan pengguna untuk menggunakan model tersebut dengan menginput: Kode Emiten Saham, Start Date, End Date, dan Memilih Model prediksi RNN dan LSTM. 
+Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance** (https://finance.yahoo.com/quote/BBRI.JK/). Model prediktif dijalankan dan diubah menjadi sebuah aplikasi web interaktif yaitu Streamlit yang memungkinkan pengguna untuk menggunakan model tersebut dengan menginput: Kode Emiten Saham, Start Date, End Date, dan Memilih Model prediksi RNN dan LSTM. 
 
 ---
 ## Penulis:
@@ -14,21 +14,21 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance** (https
 ## Features:
 
 1. **Data Collection**:
-   - Dataset harga saham untuk **BBRI.JK** diperoleh menggunakan **Yahoo Finance API**.
+   - Dataset harga saham **BBRI.JK** diperoleh menggunakan **Yahoo Finance API**.
    - Dataset meliputi harga seperti **Open**, **High**, **Low**,**Close**, dan **Volume** secara harian.
 
 2. **Preprocessing**:
    - Pembersihan data 
-   - Splitting data : Training, Validation dan Testing
+   - Splitting data : Training (70%), Validation (15%) dan Testing (15%)
    - Scalling data : MinMaxScaler
-   - Pembentukan Sliding Window 
+   - Pembentukan Sliding Window : 30 Timestep
 
 3. **Models**:
    - **RNN** 
    - **LSTM** 
 
 4. **Hyperparameter Tuning**:
-   - **RandomizedSearchCV** digunakan dalam pencarian kombinasi terbaik tiap model, diantaranya:
+   - Metode **RandomizedSearchCV**, yang dibangun meliputi:
      - Unit/Neuron   : 64, 128, 256
      - Layer         : 1, 2
      - Dropout       : 0.2, 0.3
@@ -46,6 +46,7 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance** (https
 
 ---
 ## Installation: 
+
 - Clone the repository:
    ```bash
    git clone https://github.com/vinz25-coder/Prediksi_Saham_RNN-LSTM.git
@@ -62,9 +63,10 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance** (https
 ---
 ## Important Requirements:
 
-- Python == `3.12.7`
-- TensorFlow == `2.18.0`
-- Scikit-Learn == `1.5.0`
-- Pandas == `2.2.3`
-- NumPy == `2.0.2`
-- Matplotlib == `3.10.1`
+- python == `3.12.7`
+- tensorFlow == `2.18.0`
+- scikit-learn == `1.5.0`
+- pandas == `2.2.3`
+- numPy == `2.0.2`
+- matplotlib == `3.10.1`
+- streamlit == `1.44.1`
