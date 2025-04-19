@@ -1,17 +1,17 @@
 # Prediksi Harga Penutupan Emiten Saham PT. Bank Rakyat Indonesia (Persero) Tbk. (BBRI) Dengan Recurrent Neural Network (RNN) dan Long Short-Term Memory (LSTM)
 
-Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance** (https://finance.yahoo.com/). Model prediktif telah dijalankan dan diubah menjadi sebuah aplikasi web yang memungkinkan pengguna untuk menggunakan model tersebut dengan menginput: Kode Emiten Saham, Start Date, End Date, dan Memilih Model prediksi RNN dan LSTM . 
+Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance** (https://finance.yahoo.com/). Model prediktif dijalankan dan diubah menjadi sebuah aplikasi web interaktif yaitu Streamlit yang memungkinkan pengguna untuk menggunakan model tersebut dengan menginput: Kode Emiten Saham, Start Date, End Date, dan Memilih Model prediksi RNN dan LSTM. 
 
-
-### Penulis
+---
+## Penulis:
 
 - Nama             : Evindo Amanda Riza
 - Program Studi    : Teknik Informatika
 - Npm              : 218160018
 - Perguruan Tinggi : Universitas Medan Area
 
-
-## Features
+---
+## Features:
 
 1. **Data Collection**:
    - Dataset harga saham untuk **BBRI.JK** diperoleh menggunakan **Yahoo Finance API**.
@@ -42,10 +42,21 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance** (https
 5. **Visualization**:
    - Plotting Prediction vs Real Price
    - Plotting Training loss vs Validation loss
+   - App Web : Streamlit
 
 ---
+## Installation: 
+   Langkah - langkah instalasi virtual environment :
+- Clone the repository:
+   - git clone https://github.com/vinz25-coder/Prediksi_Saham_RNN-LSTM.git
+- Install the required dependencies:
+   - pip install -r requirements.txt
+- Run the Streamlit app:
+   - streamlit run main.py
 
-## Important Requirements
+---
+## Important Requirements:
+
 - Python == `3.12.7`
 - TensorFlow == `2.18.0`
 - Scikit-Learn == `1.5.0`
