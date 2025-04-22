@@ -11,13 +11,13 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance**: (http
 - Npm              : 218160018
 
 ---
-### Features:
+### Tahapan:
 
-1. **Data Collection**:
+1. **Pengumpulan Data**:
    - Dataset harga saham **BBRI.JK** diperoleh melalui **Yahoo Finance API**.
    - Dataset meliputi harga seperti **Open**, **High**, **Low**,**Close**, dan **Volume** secara harian.
 
-2. **Preprocessing**:
+2. **Praproses Data**:
    - Pembersihan data 
    - Splitting data : Training (70%), Validation (15%) dan Testing (15%)
    - Scalling data : MinMaxScaler
@@ -28,7 +28,7 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance**: (http
    - **LSTM** 
 
 4. **Hyperparameter Tuning**:
-   - Metode:**RandomizedSearchCV** 
+   - Metode : **RandomizedSearchCV** 
 
 5. **Visualization**:
    - Plotting Prediction vs Real Price
@@ -36,7 +36,7 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance**: (http
    - App Web : Streamlit
 
 ---
-### Installation: 
+### Instalasi: 
 
 - Clone the repository:
    ```bash
@@ -52,7 +52,7 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance**: (http
   ```
 
 ---
-### Important Requirements:
+### Persyaratan Sistem Penting / Important Requirements:
 
 - python == `3.12.7`
 - tensorFlow == `2.18.0`
