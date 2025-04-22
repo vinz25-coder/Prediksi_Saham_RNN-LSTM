@@ -28,16 +28,7 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance**: (http
    - **LSTM** 
 
 4. **Hyperparameter Tuning**:
-   - Metode **RandomizedSearchCV** yang dibangun, meliputi:
-     - Unit/Neuron   : 64, 128, 256
-     - Layer         : 1, 2
-     - Dropout       : 0.2, 0.3
-     - Learning rate : 0.001, 0.0001
-     - Epoch         : 100
-     - Batch Size    : 64
-     - optimizer     : Adam
-     - loss          : MSE
-     - metric        : RMSE, MSE, MAE
+   - Metode:**RandomizedSearchCV** 
 
 5. **Visualization**:
    - Plotting Prediction vs Real Price
