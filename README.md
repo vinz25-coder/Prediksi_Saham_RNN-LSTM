@@ -30,7 +30,7 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance**: (http
 4. **Hyperparameter Tuning**:
    - Metode : **RandomizedSearchCV** 
 
-5. **Visualization**:
+5. **Visualisasi**:
    - Plotting Prediction vs Real Price
    - Plotting Training loss vs Validation loss
    - App Web : Streamlit
