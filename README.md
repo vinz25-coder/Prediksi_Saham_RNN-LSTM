@@ -1,20 +1,20 @@
 ## Prediksi Harga Penutupan Emiten Saham PT. Bank Rakyat Indonesia (Persero) Tbk. (BBRI) Dengan Recurrent Neural Network (RNN) dan Long Short-Term Memory (LSTM)
 
-Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance**: (https://finance.yahoo.com/quote/BBRI.JK/). Hasil prediksi ditampilkan dalam sebuah aplikasi web interaktif yaitu Streamlit yang memungkinkan pengguna untuk menggunakannya dengan menginput: Kode Emiten Saham, Start Date, End Date, dan memilih model prediksi RNN dan LSTM. 
+Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance**: (https://finance.yahoo.com/quote/BBRI.JK/) dengan cara scrapping dataset. Hasil prediksi juga ditampilkan dalam sebuah aplikasi web interaktif yaitu **Streamlit** yang memungkinkan pengguna menggunakannya dengan menginput: Kode Emiten Saham, Start Date, End Date, dan memilih model prediksi RNN dan LSTM. 
 
 ---
 ### Penulis:
 
 - Nama             : Evindo Amanda Riza
 - Program Studi    : Teknik Informatika
-- Npm              : 218160018
 - Perguruan Tinggi : Universitas Medan Area
+- Npm              : 218160018
 
 ---
 ### Features:
 
 1. **Data Collection**:
-   - Dataset harga saham **BBRI.JK** diperoleh menggunakan **Yahoo Finance API**.
+   - Dataset harga saham **BBRI.JK** diperoleh melalui **Yahoo Finance API**.
    - Dataset meliputi harga seperti **Open**, **High**, **Low**,**Close**, dan **Volume** secara harian.
 
 2. **Preprocessing**:
@@ -28,7 +28,7 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance**: (http
    - **LSTM** 
 
 4. **Hyperparameter Tuning**:
-   - Metode **RandomizedSearchCV**, yang dibangun meliputi:
+   - Metode **RandomizedSearchCV** yang dibangun, meliputi:
      - Unit/Neuron   : 64, 128, 256
      - Layer         : 1, 2
      - Dropout       : 0.2, 0.3
@@ -70,3 +70,4 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance**: (http
 - numPy == `2.0.2`
 - matplotlib == `3.10.1`
 - streamlit == `1.44.1`
+- yfinance == `0.2.55`
