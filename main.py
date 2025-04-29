@@ -3,8 +3,9 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from datetime import date
+from datetime import date, datetime, timedelta
 from streamlit_option_menu import option_menu
+from sklearn.preprocessing import MinMaxScaler
 from services import load_data, validation_input, plot_data, plot_volume, statistics
 from models import prediction, split_data, plot_data_split, load_best_model, load_training_results, preprocess_data
 from sklearn.metrics import mean_squared_error, mean_absolute_error, root_mean_squared_error
@@ -21,13 +22,13 @@ def sidebar():
     st.sidebar.title("Menu")
 
     # Pilihan saham
-    stocks = ["BBCA.JK", "BBRI.JK"]
+    stocks = ["BBCA.JK", "BBNI.JK", "BBRI.JK", "BMRI.JK"]
     
     # Sidebar dan menyimpan selected_stock dalam session_state jika belum ada
     if "selected_stock" not in st.session_state:
         st.session_state["selected_stock"] = "-- Pilih Saham --"
     selected_stock = st.sidebar.selectbox(
-        "Pilih Saham untuk Prediksi", 
+        "Pilih Saham", 
         ["-- Pilih Saham --"] + stocks, 
         index=(["-- Pilih Saham --"] + stocks).index(st.session_state["selected_stock"])
     )
@@ -37,7 +38,7 @@ def sidebar():
     if "start_date" not in st.session_state:
         st.session_state["start_date"] = date.today()
     start_date = st.sidebar.date_input(
-        "Start Date",
+        "Tanggal Mulai",
         value=st.session_state["start_date"],  
         min_value=date(2010, 1, 1),
         max_value=date.today()
@@ -47,14 +48,14 @@ def sidebar():
     if "end_date" not in st.session_state:
         st.session_state["end_date"] = date.today() 
     end_date = st.sidebar.date_input(
-        "End Date",
+        "Tanggal Akhir",
         value=st.session_state["end_date"],
         min_value=start_date,  
         max_value=date.today()  
     )
     st.session_state["end_date"] = end_date  
 
-    selected_stocks_comparison = st.sidebar.multiselect("Pilih Saham untuk Perbandingan", stocks)
+    selected_stocks_comparison = st.sidebar.multiselect("Pilih Saham Untuk Perbandingan", stocks)
 
     return selected_stock, start_date, end_date, selected_stocks_comparison
 
@@ -87,7 +88,7 @@ def main():
     )
     st.markdown(
         "<h1 style='text-align: center; margin-top: -30px;'>"
-        "Deep<span style='color: #9966CC;'>Stock</span> Forecast AI 📈"
+        "Deep<span style='color: #9966CC;'>Stock</span> Prediction AI 📈"
         "</h1>",
         unsafe_allow_html=True
     )
@@ -95,7 +96,9 @@ def main():
         "<p style='text-align: center;'>"
         "<span style='font-weight: bold;'>Deep</span>"
         "<span style='color: #9966CC; font-weight: bold;'>Stock</span> "
-        "adalah aplikasi web sederhana prediksi harga saham menggunakan RNN & LSTM."
+        "adalah aplikasi web sederhana prediksi harga saham menggunakan "
+        "<span style='color: #FF5733; font-weight: bold;'>RNN</span> & "
+        "<span style='color: #33C1FF; font-weight: bold;'>LSTM</span>"
         "</p>",
         unsafe_allow_html=True
     )
@@ -103,7 +106,7 @@ def main():
     # ====================== MENU NAVIGASI ======================
     selected_tab = option_menu(
         menu_title=None,
-        options=["Dataframes", "Plots", "Statistics", "Forecasting", "Comparison"],
+        options=["Dataframes", "Charts", "Statistics", "Prediction",  "Comparison"],
         icons=["table", "bar-chart", "calculator", "graph-up-arrow", "arrow-down-up"],
         menu_icon="📊",
         default_index=0,
@@ -129,17 +132,16 @@ def main():
     # ====================== DATAFRAMES ===========================
     if selected_tab == "Dataframes":
         st.markdown(
-            f"<h3>📆 Historical Data: <span style='color:#9966CC; font-weight:bold;'>{selected_stock}</span> ({start_date} - {end_date})</h3>", unsafe_allow_html=True)
+            f"<h3>📆 Data Historis: <span style='color:#9966CC; font-weight:bold;'>{selected_stock}</span> ({start_date} - {end_date})</h3>", unsafe_allow_html=True)
         st.markdown("<hr style='border: 1px solid #333; margin:-1px 0;'>", unsafe_allow_html=True)
-        # Ubah angka menjadi format string dengan 2 desimal
         data = data.applymap(lambda x: f"{x:,.2f}" if isinstance(x, (int, float)) else x)
         df = pd.DataFrame(data)
         st.dataframe(df)
        
      # ====================== TAMPILKAN CHART PADA "PLOTS" ======================
-    elif selected_tab == "Plots":
+    elif selected_tab == "Charts":
         st.markdown(
-            f"<h3>📊 Plotting Chart: <span style='color:#9966CC; font-weight:bold;'>{selected_stock}</span> ({start_date} - {end_date})</h3>", 
+            f"<h3>📊 Grafik Harga: <span style='color:#9966CC; font-weight:bold;'>{selected_stock}</span> ({start_date} - {end_date})</h3>", 
         unsafe_allow_html=True
         )
         st.markdown("<hr style='border: 1px solid #333; margin:-1px 0;'>", unsafe_allow_html=True)
@@ -149,18 +151,20 @@ def main():
     # ====================== Statistics ======================
     elif selected_tab == "Statistics":
         st.markdown(
-            f"<h3>🔢 Statistics: <span style='color:#9966CC; font-weight:bold;'>{selected_stock}</span> ({start_date} - {end_date})</h3>", 
+            f"<h3>🔢 Statistik: <span style='color:#9966CC; font-weight:bold;'>{selected_stock}</span> ({start_date} - {end_date})</h3>", 
             unsafe_allow_html=True
         )
         st.markdown("<hr style='border: 1px solid #333; margin:-1px 0;'>", unsafe_allow_html=True)
         statistics(data, stock_info, selected_stock)
     
-    # ======================  Forecasting ======================
-    elif selected_tab == "Forecasting":
+    # ====================== Prediction ======================
+    elif selected_tab == "Prediction":
         def display_prediction(selected_stock, start_date, end_date):
             """Menampilkan judul prediksi harga saham."""
             st.markdown(
-                f"<h3>🎯 Prediksi Harga Saham: <span style='color:#9966CC;'>{selected_stock}</span> ({start_date} - {end_date})</h3>",  
+                f"""<h3>🚀 Prediksi Model 
+                <span style="color:#FF5733;">RNN</span> 
+                & <span style="color:#33C1FF;">LSTM</span> : <span style='color:#9966CC;'>{selected_stock}</span> ({start_date} - {end_date})</h3>""",  
                 unsafe_allow_html=True
             )
             st.markdown("<hr style='border: 1px solid #333; margin:-1px 0;'>", unsafe_allow_html=True)
@@ -178,7 +182,7 @@ def main():
         
         def preprocess_and_display_data(df):
             """Melakukan preprocessing dan menampilkan data pelatihan."""
-            st.markdown("<h5> Pembentukan Sliding Window</h5>", unsafe_allow_html=True)
+            st.markdown("<h5> Pembentukan Pola Sliding Window</h5>", unsafe_allow_html=True)
 
             train_data, val_data, test_data = split_data(df)
             data = preprocess_data(df, len(train_data), len(val_data), len(test_data), time_step=30)
@@ -193,7 +197,7 @@ def main():
             # Denormalisasi
             x_train_original = data['scaler'].inverse_transform(data['x_train'][:, :, 0])
             y_train_original = data['scaler'].inverse_transform(data['y_train'])
-            df_x_train_original = pd.DataFrame(x_train_original).applymap(lambda x: f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if isinstance(x, (int, float)) else x)
+            df_x_train_original = pd.DataFrame(x_train_original).applymap(lambda x: f"{x:,.2f}" if isinstance(x, (int, float)) else x)
             df_x_train_original["y_train"] = y_train_original
             
             st.markdown("**🔍 Denormalized Training Data (First 10 Rows)**", unsafe_allow_html=True)
@@ -278,12 +282,12 @@ def main():
             fig.update_traces(
                 line=dict(width=2), 
                 hoverinfo="x+y", 
-                hovertemplate="📅 Tanggal: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
+                hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
             )
             fig.update_layout(
                 title="Visualisasi Training, Validation, Testing, dan Prediksi",
                 xaxis_title="Date",
-                yaxis_title="Close Price",
+                yaxis_title="Harga Saham",
                 height=650,
                 hovermode="x",
                 xaxis=dict(
@@ -323,12 +327,12 @@ def main():
             fig.update_traces(
                 line=dict(width=2), 
                 hoverinfo="x+y", 
-                hovertemplate="📅 Tanggal: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
+                hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
             )
             fig.update_layout(
                 title=f"Prediksi pada Model {model_name}",
                 xaxis_title="Date",
-                yaxis_title="Close Price",
+                yaxis_title="Harga Saham",
                 height=650,
                 hovermode="x",
                 xaxis=dict(
@@ -368,12 +372,12 @@ def main():
             fig.update_traces(
                 line=dict(width=2), 
                 hoverinfo="x+y", 
-                hovertemplate="📅 Tanggal: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
+                hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
             )
             fig.update_layout(
                 title="RNN vs LSTM",
-                xaxis_title="Date",
-                yaxis_title="Close Price",
+                xaxis_title="Tanggal",
+                yaxis_title="Harga Saham",
                 height=650,
                 hovermode="x",
                 xaxis=dict(
@@ -392,6 +396,17 @@ def main():
             )
             return fig
 
+        def reset_predictions(selected_stock, start_date, end_date):
+            if "last_selected_stock" not in st.session_state or st.session_state["last_selected_stock"] != selected_stock or \
+            "last_start_date" not in st.session_state or st.session_state["last_start_date"] != start_date or \
+            "last_end_date" not in st.session_state or st.session_state["last_end_date"] != end_date:
+                st.session_state.pop("pred_rnn", None)
+                st.session_state.pop("pred_lstm", None)
+
+            st.session_state["last_selected_stock"] = selected_stock
+            st.session_state["last_start_date"] = start_date
+            st.session_state["last_end_date"] = end_date
+
         # 1️⃣ Tampilkan Header
         display_prediction(selected_stock, start_date, end_date)
 
@@ -404,13 +419,15 @@ def main():
         # 4️⃣ Simpan Scaler ke session_state
         st.session_state["scaler_RNN"] = data["scaler"]
         st.session_state["scaler_LSTM"] = data["scaler"]
+
+        reset_predictions(selected_stock, start_date, end_date)
         
         with st.container():
             st.markdown("<h5> Pilih Model yang Ingin Ditampilkan</h5>", unsafe_allow_html=True)
             model_option = st.radio(
                 "Pilih Model :",
                 options=["RNN", "LSTM", "RNN vs LSTM"],
-                index=0,  
+                index=None,  
                 horizontal=True
             )
             st.divider()
@@ -480,24 +497,27 @@ def main():
                     st.plotly_chart(fig_lstm_focus)
                     
         elif model_option == "RNN vs LSTM":
-            if "pred_rnn" in st.session_state and "pred_lstm" in st.session_state:
+            if "pred_rnn" not in st.session_state or "pred_lstm" not in st.session_state:
+                st.warning("⚠️ Silakan jalankan prediksi RNN dan LSTM terlebih dahulu.")
+                st.divider()
+            else:
                 pred_rnn = st.session_state["pred_rnn"]
                 pred_lstm = st.session_state["pred_lstm"]
 
                 # ✅ Deteksi otomatis kolom harga penutupan
                 close_col = next((col for col in test_data.columns if "Close" in col), "Close")
 
-                # ✅ Rename prediksi jika kolomnya hanya 'Close' tapi test_data pakai 'Close_XXX'
+                # ✅ Rename prediksi kalau perlu
                 if "Close" in pred_rnn.columns and close_col != "Close":
                     pred_rnn = pred_rnn.rename(columns={"Close": close_col})
                 if "Close" in pred_lstm.columns and close_col != "Close":
                     pred_lstm = pred_lstm.rename(columns={"Close": close_col})
 
-                # Plot perbandingan prediksi
+                # Plot Perbandingan
                 fig_comparison = plot_comparison(test_data, pred_rnn, pred_lstm)
                 st.plotly_chart(fig_comparison)
 
-                # Evaluasi Model
+                # Evaluasi
                 actual_prices = test_data[close_col].values.squeeze()
                 predicted_rnn = pred_rnn[close_col].values.squeeze()
                 predicted_lstm = pred_lstm[close_col].values.squeeze()
@@ -514,34 +534,84 @@ def main():
                     st.write(f"- **MSE**: {mse_rnn:,.2f}")
                     st.write(f"- **RMSE**: {rmse_rnn:,.2f}")
                     st.write(f"- **MAE**: {mae_rnn:,.2f}")
-
                 with col2:
                     st.markdown("**LSTM :**")
                     st.write(f"- **MSE**: {mse_lstm:,.2f}")
                     st.write(f"- **RMSE**: {rmse_lstm:,.2f}")
                     st.write(f"- **MAE**: {mae_lstm:,.2f}")
 
-                # Tabel perbandingan hasil prediksi
-                with st.container():
-                    st.divider()
-                    st.markdown("**Hasil Prediksi RNN vs LSTM**", unsafe_allow_html=True)
-
-                    df_comparison = pd.DataFrame({
-                        "Date": test_data.index.strftime('%Y-%m-%d'),
-                        "Actual Price": actual_prices,
-                        "Predicted RNN": predicted_rnn,
-                        "Predicted LSTM": predicted_lstm
-                    })
-
-                    # Format angka
-                    df_comparison.iloc[:, 1:] = df_comparison.iloc[:, 1:].applymap(
-                        lambda x: f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                    )
-
-                    st.dataframe(df_comparison, height=400, use_container_width=True)
+                # Tabel Perbandingan
                 st.divider()
+                st.markdown("**Hasil Prediksi RNN vs LSTM**", unsafe_allow_html=True)
 
+                df_comparison = pd.DataFrame({
+                    "Date": test_data.index.strftime('%Y-%m-%d'),
+                    "Actual Price": actual_prices,
+                    "Predicted RNN": predicted_rnn,
+                    "Predicted LSTM": predicted_lstm
+                })
 
+                df_comparison.iloc[:, 1:] = df_comparison.iloc[:, 1:].applymap(
+                    lambda x: "{:,.2f}".format(x) if isinstance(x, (int, float)) else x
+                )
+                st.dataframe(df_comparison, height=400, use_container_width=True)
+
+                # ====================== Future Prediction Section ======================
+                st.divider()
+                st.markdown("<h4>🚀 Prediksi Masa Depan</h4>", unsafe_allow_html=True)
+
+                future_days = st.number_input("Masukkan jumlah hari ke depan yang ingin diprediksi:", min_value=1, max_value=100, value=7, step=1)
+
+                # Pilih model untuk prediksi masa depan
+                future_model_option = st.radio(
+                    "Pilih Model untuk Prediksi Masa Depan:",
+                    options=["RNN", "LSTM"],
+                    horizontal=True
+                )
+
+                if st.button("Prediksi Hari Kedepan 🚀"):
+                    with st.spinner("🔮 Memprediksi masa depan..."):
+
+                        # Load model dan scaler yang sesuai
+                        model_future = display_model(future_model_option)
+                        scaler_future = st.session_state.get(f"scaler_{future_model_option}")
+
+                        if model_future and scaler_future:
+                            # Ambil 30 hari terakhir dari data (pastikan data tersedia)
+                            last_30_days = df[close_col][-30:].values.reshape(-1, 1)
+                            last_30_days_scaled = scaler_future.transform(last_30_days)  # Skalakan data
+
+                            # Tempat menyimpan hasil prediksi
+                            predicted_price_scaled = []
+
+                            # Prediksi untuk beberapa hari ke depan (misalnya 7 hari)
+                            for i in range(future_days):
+                                # Prediksi untuk model yang dipilih (RNN atau LSTM)
+                                x_input = np.array(last_30_days_scaled[-30:]).reshape(1, 30, 1)  # 30 hari terakhir
+                                pred = model_future.predict(x_input, verbose=0)
+                                predicted_price_scaled.append(pred[0][0])
+                                last_30_days_scaled = np.append(last_30_days_scaled[1:], pred[0][0])  # Update input untuk prediksi berikutnya
+
+                            # Kembalikan ke skala harga asli
+                            predicted_price = scaler_future.inverse_transform(np.array(predicted_price_scaled).reshape(-1, 1))
+
+                            # Buat tanggal prediksi
+                            last_date = df.index[-1]
+                            future_dates = pd.date_range(last_date + pd.Timedelta(days=1), periods=future_days, freq='B')  # B = Business Days
+
+                            # Buat DataFrame untuk hasil prediksi
+                            df_future = pd.DataFrame({
+                                "Date": future_dates.strftime('%Y-%m-%d'),  # Tanggal dalam format Y-M-D
+                                f"Predicted Close ({future_model_option})": predicted_price.flatten()
+                            })
+
+                            # Format harga saham dengan dua angka desimal
+                            df_future[f"Predicted Close ({future_model_option})"] = df_future[f"Predicted Close ({future_model_option})"].apply(lambda x: f"{x:,.2f}")
+
+                            st.success(f"✅ Berhasil memprediksi {future_days} hari ke depan menggunakan model {future_model_option}!")
+
+                            # Tampilkan DataFrame dengan format yang lebih rapi
+                            st.dataframe(df_future)
 
     # ====================== "Comparison" ======================
     elif selected_tab == "Comparison":
@@ -568,11 +638,13 @@ def main():
                                             y=data[ticker], 
                                             mode='lines', 
                                             name=ticker,
-                                            ))
+                                            hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close: %{y:,.2f}",
+                                            text=ticker
+                                          ))
                 # Layout
                 fig.update_layout(title='Perbandingan Harga Saham',
                     xaxis_title='Tanggal',
-                    yaxis_title='Harga',               
+                    yaxis_title='Harga Saham',               
                     template="plotly_dark",
                     width=1100, 
                     height=700,
@@ -601,12 +673,12 @@ def main():
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
-                             
+
 # Copyright 
 st.markdown("""
     <div style='position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
                 font-size: 14px; color: #A9A9A9; text-align: center; width: 100%;'>
-        © 2025 Evindo Amanda. All Rights Reserved.
+        © 2025 DeepStock Prediction AI. All Rights Reserved.
     </div>
 """, unsafe_allow_html=True)
 

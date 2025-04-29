@@ -103,13 +103,13 @@ def plot_data_split(df):
     fig.update_traces(
         line=dict(width=2), 
         hoverinfo="x+y", 
-        hovertemplate="📅 Tanggal: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
+        hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
     )
 
     fig.update_layout(
         title=" Pembagian Data Training, Validation, dan Testing",
         xaxis_title="Tanggal",
-        yaxis_title="Harga",
+        yaxis_title="Harga Saham",
         height=650,
         hovermode="x",
         xaxis=dict(

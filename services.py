@@ -117,7 +117,7 @@ def plot_data(data):
     
     # Pastikan kolom yang akan ditampilkan ada dalam dataset
     hover_text = "<b>📅 Date:</b> %{x|%Y-%m-%d}<br>"  # Tanggal
-    hover_text += "<b> Close:</b> %{y:.2f}<br>"  # Harga Penutupan
+    hover_text += "<b> Close:</b> %{y:,.2f}<br>"  # Harga Penutupan
     if "Open" in data.columns:
         hover_text += "<b> Open:</b> %{customdata[0]:,.2f}<br>"  # Harga Pembukaan
     if "High" in data.columns:
@@ -216,18 +216,19 @@ def plot_volume(data):
     )
     st.plotly_chart(fig, use_container_width=True)
 
-# **🔢 Format angka besar (K/M/B)**
-def format_value(value):
+def format_value(value, is_percentage=False):
     if value is None or value == "N/A":  
         return "-"
     try:
         value = float(value)
+        if is_percentage:
+            return f"{value * 100:.2f}%"  
         if value >= 1_000_000_000_000:
-            return f"{value / 1_000_000_000_000:.2f}T"
+            return f"{value / 1_000_000_000_000:,.2f}T"
         elif value >= 1_000_000_000:
-            return f"{value / 1_000_000_000:.2f}B"
+            return f"{value / 1_000_000_000:,.2f}B"
         elif value >= 1_000_000:
-            return f"{value / 1_000_000:.2f}M"
+            return f"{value / 1_000_000:,.2f}M"
         else:
             return f"{value:,.2f}"
     except ValueError:
@@ -254,21 +255,6 @@ def statistics(data, stock_info, selected_stock):
     avg_volume = float(data["Volume"].mean())
     max_volume = float(data["Volume"].max())
 
-    def format_value(value):
-        if value is None or value == "N/A":  
-            return "-"
-        try:
-            value = float(value)
-            if value >= 1_000_000_000_000:
-                return f"{value / 1_000_000_000_000:.2f}T"
-            elif value >= 1_000_000_000:
-                return f"{value / 1_000_000_000:.2f}B"
-            elif value >= 1_000_000:
-                return f"{value / 1_000_000:.2f}M"
-            else:
-                return f"{value:,.2f}"
-        except ValueError:
-            return "-"
 
     # Menampilkan metrik statistik
     col1, col2, col3 = st.columns(3)
@@ -281,7 +267,7 @@ def statistics(data, stock_info, selected_stock):
     with col2:
         st.metric(label="⭑ Harga Pembukaan", value=f"{open_price:,.2f}")
         st.metric(label="⭑ Harga Penutupan Terakhir", value=f"{close_price:,.2f}")
-        st.metric(label="⭑ Perubahan Harga (%)", value=f"{price_change:.2f} %")
+        st.metric(label="⭑ Perubahan Harga (%)", value=f"{price_change:,.2f} %")
         
 
     with col3:
@@ -290,15 +276,15 @@ def statistics(data, stock_info, selected_stock):
     
     # Menampilkan informasi tambahan saham jika tersedia
     if stock_info:
-        st.markdown(f"<h3>🏛️ Stock Info: <span style='color:#9966CC; font-weight:bold;'>{selected_stock}</span></h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3>🏛️ Informasi Saham: <span style='color:#9966CC; font-weight:bold;'>{selected_stock}</span></h3>", unsafe_allow_html=True)
         st.markdown("<hr style='border: 1px solid #333; margin:-1px 0;'>", unsafe_allow_html=True)
         
         col4, col5, col6 = st.columns(3)
         with col4:
             st.metric(label="⭑ 52-Week Low", value=format_value(stock_info.get("52-Week Low")))
             st.metric(label="⭑ Dividend Yield", value=format_value(stock_info.get("Dividend Yield")))
-            st.metric(label="⭑ Profit Margin", value=format_value(stock_info.get("Profit Margin")))
-            st.metric(label="⭑ Return on Equity (ROE)", value=format_value(stock_info.get("ROE")))
+            st.metric(label="⭑ Profit Margin", value=format_value(stock_info.get("Profit Margin"), is_percentage=True))
+            st.metric(label="⭑ Return on Equity (ROE)", value=format_value(stock_info.get("ROE"), is_percentage=True))
 
         with col5:
             st.metric(label="⭑ 52-Week High", value=format_value(stock_info.get("52-Week High")))
