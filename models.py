@@ -1,7 +1,7 @@
+import os
 import math
 import pandas as pd
 import tensorflow as tf
-import os
 import plotly.io as pio
 import plotly.graph_objects as go
 import streamlit as st
@@ -10,21 +10,14 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from services import load_data
 
-
 # =========================================
 #  Fungsi Ambil Data Saham
 # =========================================
+
 @st.cache_data
 def prediction(ticker, start_date, end_date):
-    """Mengambil data saham dan mengembalikan dataframe dengan hanya kolom 'Date' dan 'Close'."""
-
-    if ticker == "BBRI.JK":
-        df = pd.read_excel("datasets/BBRI_2010-2025.xlsx")
-        df["Date"] = pd.to_datetime(df["Date"])
-        df = df.sort_values("Date")
-        df = df[(df["Date"] >= pd.to_datetime(start_date)) & (df["Date"] <= pd.to_datetime(end_date))]
-    else:
-        df, _ = load_data(ticker, start_date, end_date)
+    """Mengambil data saham"""
+    df, _ = load_data(ticker, start_date, end_date)
 
     # Pastikan hanya kolom Date dan Close yang digunakan
     df = df[['Date', 'Close']].copy()
@@ -38,22 +31,16 @@ def prediction(ticker, start_date, end_date):
 
 def split_data(df):
     length_data = len(df)
+    train_len = math.ceil(length_data * 0.7)  
+    val_len = int(length_data * 0.15)   
+    test_len = length_data - (train_len + val_len)  
 
-    # Rasio pembagian data
-    train_len = math.ceil(length_data * 0.7)  # 70% data untuk training
-    val_len = int(length_data * 0.15)   # 15% data untuk validation
-    test_len = length_data - (train_len + val_len)  # Sisa 15% untuk testing
-
-    # Ambil kolom tanggal sebelum membagi data
-    dates = df.index  # Simpan index datetime
-    
     # Pisahkan dataset dengan iloc dan copy untuk menghindari warning
     train_data = df.iloc[:train_len].copy()
     val_data = df.iloc[train_len:train_len + val_len].copy()
     test_data = df.iloc[train_len + val_len:].copy()
 
     return train_data, val_data, test_data
-
 
 # =========================================
 # Fungsi Plot Data Split
@@ -63,7 +50,7 @@ def plot_data_split(df):
     """Menampilkan plot pembagian data menjadi Training, Validation, dan Testing."""
     pio.templates.default = "plotly_dark"
     
-    # Menghapus MultiIndex pada kolom jika ada
+    # Menghapus MultiIndex pada kolom 
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
     
@@ -88,8 +75,8 @@ def plot_data_split(df):
     
     # Plotting Dataset
     fig = go.Figure()
-    # 🟣 Training Data, 🟡 Validation Data, 🔴 Testing Data
-    colors = {"Training": "#9966CC", "Validation": "gold", "Testing": "red"}
+    # 🟣 Training Data, 🟡 Validation Data, 🔵 Testing Data
+    colors = {"Training": "#9966CC", "Validation": "gold", "Testing": "#636EFA"}
     for dataset in [train_set, val_set, test_set]:
         fig.add_trace(go.Scatter(
             x=dataset["Date"],
@@ -150,7 +137,7 @@ def plot_data_split(df):
     with col3:
         st.metric(label="🟡 Validation Data", value=val_size, delta=f"{val_pct:,.2f}%")
     with col4:
-        st.metric(label="🔴 Testing Data", value=test_size, delta=f"{test_pct:,.2f}%")
+        st.metric(label="🔵 Testing Data", value=test_size, delta=f"{test_pct:,.2f}%")
 
 # =========================================
 #  Fungsi Normalisasi dan Sliding Window                                                                                        

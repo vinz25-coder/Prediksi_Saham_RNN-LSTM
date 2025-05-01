@@ -6,19 +6,11 @@ import plotly.io as pio
 
 @st.cache_data
 def load_data(ticker, start_date, end_date):
-    # Cek jika ticker adalah BBRI.JK, maka ambil dari file lokal
-    if ticker == "BBRI.JK":
+    def get_additional_info(ticker):
         try:
-            df = pd.read_excel("datasets/BBRI_2010-2025.xlsx")
-            df["Date"] = pd.to_datetime(df["Date"])
-            df = df.sort_values("Date")
-            df = df[(df["Date"] >= pd.to_datetime(start_date)) & (df["Date"] <= pd.to_datetime(end_date))]
-            df["Date"] = df["Date"].dt.strftime("%Y-%m-%d")  # Hapus jam 00:00:00
-
             stock_ticker = yf.Ticker(ticker)
             stock_info = stock_ticker.info  
-            
-            additional_info = {
+            return {
                 "Market Cap": stock_info.get("marketCap"),
                 "52-Week High": stock_info.get("fiftyTwoWeekHigh"),
                 "52-Week Low": stock_info.get("fiftyTwoWeekLow"),
@@ -30,14 +22,26 @@ def load_data(ticker, start_date, end_date):
                 "Profit Margin": stock_info.get("profitMargins"),
                 "ROE": stock_info.get("returnOnEquity"),
             }
+        except Exception as e:
+            st.error(f"⚠️ Tidak bisa mengambil informasi tambahan untuk {ticker}: {e}")
+            return {}
 
-            return df, additional_info 
+    if ticker == "BBRI.JK":
+        try:
+            df = pd.read_excel("datasets/BBRI_2010-2025.xlsx")
+            df["Date"] = pd.to_datetime(df["Date"])
+            df = df.sort_values("Date")
+            df = df[(df["Date"] >= pd.to_datetime(start_date)) & (df["Date"] <= pd.to_datetime(end_date))]
+            df["Date"] = df["Date"].dt.strftime("%Y-%m-%d")
+
+            additional_info = get_additional_info(ticker)
+            return df, additional_info
 
         except Exception as e:
             st.error(f"❌ Gagal membaca file lokal BBRI: {str(e)}")
             return None, None
 
-    # Jika bukan BBRI.JK, ambil dari Yahoo Finance seperti biasa
+    # Jika bukan BBRI.JK, ambil data dari Yahoo Finance
     try:
         stock = yf.download(ticker, start=start_date, end=end_date)
 
@@ -61,27 +65,7 @@ def load_data(ticker, start_date, end_date):
         stock["Date"] = pd.to_datetime(stock["Date"]).dt.strftime("%Y-%m-%d")
         stock = stock.sort_values("Date")
 
-        try:
-            stock_ticker = yf.Ticker(ticker)
-            stock_info = stock_ticker.info  
-
-            additional_info = {
-                "Market Cap": stock_info.get("marketCap"),
-                "52-Week High": stock_info.get("fiftyTwoWeekHigh"),
-                "52-Week Low": stock_info.get("fiftyTwoWeekLow"),
-                "P/E Ratio": stock_info.get("trailingPE"),
-                "EPS": stock_info.get("trailingEps"),
-                "Dividend Yield": stock_info.get("dividendYield"),
-                "Revenue": stock_info.get("totalRevenue"),
-                "Net Income": stock_info.get("netIncomeToCommon"),
-                "Profit Margin": stock_info.get("profitMargins"),
-                "ROE": stock_info.get("returnOnEquity"),
-            }
-
-        except Exception as e:
-            st.error(f"⚠️ Tidak bisa mengambil informasi tambahan: {e}")
-            additional_info = {}
-
+        additional_info = get_additional_info(ticker)
         return stock, additional_info
 
     except Exception as e:
@@ -96,14 +80,14 @@ def validation_input(selected_stock, start_date, end_date):
         st.info("❗ Silahkan pilih saham sebelum melanjutkan!")
         st.stop()
 
-    # Validasi rentang tanggal yang salah
+    # Validasi rentang tanggal salah
     if start_date > end_date:
         st.warning("⚠️ Silahkan pilih rentang tanggal yang valid. Tanggal akhir harus setelah tanggal mulai!")
         st.stop()
 
 def plot_data(data):
     pio.templates.default = "plotly_dark"  
-    data.columns = data.columns.map(lambda x: x[0] if isinstance(x, tuple) else x)  # Menghapus multi-index
+    data.columns = data.columns.map(lambda x: x[0] if isinstance(x, tuple) else x)  
     
     fig = go.Figure()
 
@@ -115,19 +99,18 @@ def plot_data(data):
         name="Close Price"
     ))
     
-    # Pastikan kolom yang akan ditampilkan ada dalam dataset
-    hover_text = "<b>📅 Date:</b> %{x|%Y-%m-%d}<br>"  # Tanggal
-    hover_text += "<b> Close:</b> %{y:,.2f}<br>"  # Harga Penutupan
+    hover_text = "<b>📅 Date:</b> %{x|%Y-%m-%d}<br>"  
+    hover_text += "<b> Close:</b> %{y:,.2f}<br>"  
     if "Open" in data.columns:
-        hover_text += "<b> Open:</b> %{customdata[0]:,.2f}<br>"  # Harga Pembukaan
+        hover_text += "<b> Open:</b> %{customdata[0]:,.2f}<br>"  
     if "High" in data.columns:
-        hover_text += "<b> High:</b> %{customdata[1]:,.2f}<br>"  # Harga Tertinggi
+        hover_text += "<b> High:</b> %{customdata[1]:,.2f}<br>"  
     if "Low" in data.columns:
-        hover_text += "<b> Low:</b> %{customdata[2]:,.2f}<br>"  # Harga Terendah
+        hover_text += "<b> Low:</b> %{customdata[2]:,.2f}<br>" 
     if "Volume" in data.columns:
-        hover_text += "<b> Volume:</b> %{customdata[3]:,.0f}"  # Volume Perdagangan
+        hover_text += "<b> Volume:</b> %{customdata[3]:,.0f}"  
 
-    # Menyiapkan customdata agar informasi lain bisa ditampilkan di hover
+    # Customdata agar informasi ditampilkan di hover
     custom_data_cols = [col for col in ["Open", "High", "Low", "Volume"] if col in data.columns]
     fig.update_traces(
         line=dict(width=2),
@@ -168,10 +151,9 @@ def plot_data(data):
     st.plotly_chart(fig, use_container_width=True)
 
 def plot_volume(data):
-    """Menampilkan grafik volume saham dengan warna konsisten dan rangeslider."""
+    """Menampilkan grafik volume saham"""
     
     fig = go.Figure()
-
     fig.add_trace(go.Scatter(
         x=data['Date'], 
         y=data['Volume'], 
@@ -247,16 +229,11 @@ def statistics(data, stock_info, selected_stock):
     avg_price = float(data["Close"].mean())
     close_price = float(data["Close"].iloc[-1])
     open_price = float(data["Open"].iloc[0])
-
-    # Menghitung perubahan harga dalam persen
     price_change = ((close_price - open_price) / open_price) * 100
-
-    # Menghitung volume perdagangan
     avg_volume = float(data["Volume"].mean())
     max_volume = float(data["Volume"].max())
 
-
-    # Menampilkan metrik statistik
+    # Menampilkan statistik saham
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -274,7 +251,7 @@ def statistics(data, stock_info, selected_stock):
         st.metric(label="⭑ Rata-rata Volume", value=format_value(avg_volume))
         st.metric(label="⭑ Volume Tertinggi", value=format_value(max_volume))
     
-    # Menampilkan informasi tambahan saham jika tersedia
+    # Menampilkan informasi saham 
     if stock_info:
         st.markdown(f"<h3>🏛️ Informasi Saham: <span style='color:#9966CC; font-weight:bold;'>{selected_stock}</span></h3>", unsafe_allow_html=True)
         st.markdown("<hr style='border: 1px solid #333; margin:-1px 0;'>", unsafe_allow_html=True)
