@@ -26,6 +26,7 @@ def load_data(ticker, start_date, end_date):
             st.error(f"⚠️ Tidak bisa mengambil informasi tambahan untuk {ticker}: {e}")
             return {}
 
+     # Jika ticker adalah BBRI.JK, maka ambil dari file lokal
     if ticker == "BBRI.JK":
         try:
             df = pd.read_excel("datasets/BBRI_2010-2025.xlsx")
@@ -113,7 +114,7 @@ def plot_data(data):
     # Customdata agar informasi ditampilkan di hover
     custom_data_cols = [col for col in ["Open", "High", "Low", "Volume"] if col in data.columns]
     fig.update_traces(
-        line=dict(width=2),
+        line=dict(width=1),
         hoverinfo="x+y",
         hovertemplate=hover_text,
         customdata=data[custom_data_cols].values if custom_data_cols else None
@@ -158,7 +159,7 @@ def plot_volume(data):
         x=data['Date'], 
         y=data['Volume'], 
         mode='lines',
-        line=dict(color='#9966CC', width=2), 
+        line=dict(color='#9966CC', width=1), 
         name="Volume",
         hovertemplate='%{y:,.0f}'
     ))

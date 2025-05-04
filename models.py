@@ -7,8 +7,9 @@ import plotly.graph_objects as go
 import streamlit as st
 import logging
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 from services import load_data
+from sklearn.preprocessing import MinMaxScaler
+
 
 # =========================================
 #  Fungsi Ambil Data Saham
@@ -75,6 +76,7 @@ def plot_data_split(df):
     
     # Plotting Dataset
     fig = go.Figure()
+
     # 🟣 Training Data, 🟡 Validation Data, 🔵 Testing Data
     colors = {"Training": "#9966CC", "Validation": "gold", "Testing": "#636EFA"}
     for dataset in [train_set, val_set, test_set]:
@@ -86,9 +88,8 @@ def plot_data_split(df):
             line=dict(color=colors[dataset["Data Type"].iloc[0]], width=2)
         ))
     
-    # Tambahkan kustomisasi tampilan
     fig.update_traces(
-        line=dict(width=2), 
+        line=dict(width=1), 
         hoverinfo="x+y", 
         hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
     )
@@ -115,21 +116,18 @@ def plot_data_split(df):
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Tampilkan ringkasan data di Streamlit
+    # Ringkasan data
     total_data = len(df)
     train_size = len(train_set)
     val_size = len(val_set)
     test_size = len(test_set)
 
-    # Tampilkan informasi tambahan di Streamlit dalam bentuk grid
     train_pct = (train_size / total_data) * 100
     val_pct = (val_size / total_data) * 100
     test_pct = (test_size / total_data) * 100
 
     st.markdown("<h5> Ringkasan Data</h5>", unsafe_allow_html=True)
-    
     col1, col2, col3, col4 = st.columns(4)
-
     with col1:
         st.metric(label="📊 Total Data", value=total_data)
     with col2:
@@ -144,7 +142,6 @@ def plot_data_split(df):
 # =========================================
 
 def sliding_window(data, time_step):
-    """Membentuk dataset dengan teknik sliding window."""
     x, y = [], []
     for i in range(time_step, len(data)):
         x.append(data[i - time_step:i, 0])
@@ -185,7 +182,7 @@ def preprocess_data(df, train_len, val_len, test_len, time_step=30):
 # =========================================
 #  Fungsi Load Model & Training Results
 # =========================================
-   
+
 MODEL_PATHS = {
     "RNN": os.path.join("model_checkpoints", "best_RNN_model.keras"),
     "LSTM": os.path.join("model_checkpoints", "best_LSTM_model.keras")
@@ -202,10 +199,8 @@ def load_best_model(model_type):
 
     if model_path is None:
         raise ValueError("Model type harus 'RNN' atau 'LSTM'")
-
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model file '{model_path}' tidak ditemukan.")
-    
     logging.info(f"Memuat model {model_type} terbaik yang telah disimpan...")
     return tf.keras.models.load_model(model_path)
 
@@ -215,7 +210,6 @@ def load_training_results(model_type):
 
     if results_path is None or not os.path.exists(results_path):
         raise FileNotFoundError(f"File training results untuk {model_type} tidak ditemukan.")
-    
     try:
         training_results = pd.read_csv(results_path)
         return training_results

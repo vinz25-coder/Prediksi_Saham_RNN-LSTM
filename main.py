@@ -141,7 +141,7 @@ def main():
      # ====================== CHARTS ======================
     elif selected_tab == "Charts":
         st.markdown(
-            f"<h3>📊 Grafik Harga: <span style='color:#9966CC; font-weight:bold;'>{selected_stock}</span> ({start_date} - {end_date})</h3>", 
+            f"<h3>📊 Grafik Harga Saham: <span style='color:#9966CC; font-weight:bold;'>{selected_stock}</span> ({start_date} - {end_date})</h3>", 
         unsafe_allow_html=True
         )
         st.markdown("<hr style='border: 1px solid #333; margin:-1px 0;'>", unsafe_allow_html=True)
@@ -269,7 +269,7 @@ def main():
             
             # Tambahkan kustomisasi tampilan
             fig.update_traces(
-                line=dict(width=2), 
+                line=dict(width=1), 
                 hoverinfo="x+y", 
                 hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
             )
@@ -322,7 +322,7 @@ def main():
             
             # Tambahkan kustomisasi tampilan
             fig.update_traces(
-                line=dict(width=2), 
+                line=dict(width=1), 
                 hoverinfo="x+y", 
                 hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
             )
@@ -362,12 +362,12 @@ def main():
             fig = go.Figure()
 
             fig.add_trace(go.Scatter(x=test.index, y=test[close_col], mode='lines', name='Testing', line=dict(color='#636EFA')))
-            fig.add_trace(go.Scatter(x=pred_rnn.index, y=pred_rnn[pred_col_rnn], mode='lines', name='Prediksi RNN', line=dict(color='Yellow', dash='dot')))
-            fig.add_trace(go.Scatter(x=pred_lstm.index, y=pred_lstm[pred_col_lstm], mode='lines', name='Prediksi LSTM', line=dict(color='red', dash='dot')))
+            fig.add_trace(go.Scatter(x=pred_rnn.index, y=pred_rnn[pred_col_rnn], mode='lines', name='Prediksi RNN', line=dict(color='red', dash='dot')))
+            fig.add_trace(go.Scatter(x=pred_lstm.index, y=pred_lstm[pred_col_lstm], mode='lines', name='Prediksi LSTM', line=dict(color='yellow', dash='dot')))
 
             # Tambahkan kustomisasi tampilan
             fig.update_traces(
-                line=dict(width=2), 
+                line=dict(width=1), 
                 hoverinfo="x+y", 
                 hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}"
             )
@@ -555,170 +555,103 @@ def main():
                 st.divider()
                 st.markdown("<h5>Prediksi Harga Saham</h5>", unsafe_allow_html=True)
 
-                # Menambahkan input jumlah hari
-                future_days = st.number_input(
-                    "Masukkan Hari: (1-7 hari)", 
-                    min_value=1, 
-                    max_value=7, 
-                    value=1, 
-                    step=1
-                )
-
-                # Menambahkan tombol untuk memulai prediksi
+                # Input jumlah hari prediksi
+                future_days = st.number_input("Masukkan Hari: (1-7 hari)", min_value=1, max_value=7, value=1, step=1)
                 predict_button = st.button("Prediksi RNN dan LSTM")
 
                 if predict_button:
                     with st.spinner("🚀 Memprediksi masa depan..."):
 
-                        # Load model yang sudah dilatih (RNN dan LSTM)
+                        # Load model dan scaler
                         model_rnn = load_best_model("RNN")
                         model_lstm = load_best_model("LSTM")
-
-                        # Load scaler yang sudah dilatih untuk RNN dan LSTM
                         scaler_rnn = st.session_state.get("scaler_RNN")
                         scaler_lstm = st.session_state.get("scaler_LSTM")
 
                         if model_rnn and model_lstm and scaler_rnn and scaler_lstm:
-                            # Ambil 30 hari terakhir dari data
+                            # Ambil dan skalakan 30 hari terakhir
                             last_30_days = df[close_col][-30:].values.reshape(-1, 1)
+                            scaled_rnn = scaler_rnn.transform(last_30_days)
+                            scaled_lstm = scaler_lstm.transform(last_30_days)
 
-                            # Skalakan data untuk RNN dan LSTM
-                            last_30_days_scaled_rnn = scaler_rnn.transform(last_30_days)
-                            last_30_days_scaled_lstm = scaler_lstm.transform(last_30_days)
+                            pred_scaled_rnn, pred_scaled_lstm = [], []
 
-                            # Tempat untuk menyimpan hasil prediksi
-                            predicted_price_rnn_scaled = []
-                            predicted_price_lstm_scaled = []
+                            # Fungsi untuk prediksi iteratif
+                            def predict_future(model, scaled_data, future_days):
+                                predictions = []
+                                for _ in range(future_days):
+                                    x_input = np.array(scaled_data[-30:]).reshape(1, 30, 1)
+                                    pred = model.predict(x_input, verbose=0)
+                                    predictions.append(pred[0][0])
+                                    scaled_data = np.append(scaled_data[1:], pred[0][0])
+                                return predictions
 
-                            # Prediksi untuk beberapa hari ke depan
-                            for i in range(future_days):
-                                # Prediksi dengan RNN
-                                x_input_rnn = np.array(last_30_days_scaled_rnn[-30:]).reshape(1, 30, 1)  # 30 hari terakhir
-                                pred_rnn = model_rnn.predict(x_input_rnn, verbose=0)
-                                predicted_price_rnn_scaled.append(pred_rnn[0][0])
-                                last_30_days_scaled_rnn = np.append(last_30_days_scaled_rnn[1:], pred_rnn[0][0])
+                            # Prediksi
+                            pred_scaled_rnn = predict_future(model_rnn, scaled_rnn, future_days)
+                            pred_scaled_lstm = predict_future(model_lstm, scaled_lstm, future_days)
 
-                                # Prediksi dengan LSTM
-                                x_input_lstm = np.array(last_30_days_scaled_lstm[-30:]).reshape(1, 30, 1)  # 30 hari terakhir
-                                pred_lstm = model_lstm.predict(x_input_lstm, verbose=0)
-                                predicted_price_lstm_scaled.append(pred_lstm[0][0])
-                                last_30_days_scaled_lstm = np.append(last_30_days_scaled_lstm[1:], pred_lstm[0][0])
+                            # Kembalikan ke skala asli
+                            pred_rnn = scaler_rnn.inverse_transform(np.array(pred_scaled_rnn).reshape(-1, 1))
+                            pred_lstm = scaler_lstm.inverse_transform(np.array(pred_scaled_lstm).reshape(-1, 1))
 
-                            # Kembalikan ke skala harga asli untuk kedua model
-                            predicted_price_rnn = scaler_rnn.inverse_transform(np.array(predicted_price_rnn_scaled).reshape(-1, 1))
-                            predicted_price_lstm = scaler_lstm.inverse_transform(np.array(predicted_price_lstm_scaled).reshape(-1, 1))
+                            # Buat DataFrame hasil prediksi
+                            def create_prediction_df(model_name, predictions):
+                                return pd.DataFrame({
+                                    "Prediksi Hari Ke": [f"Hari ke-{i+1}" for i in range(future_days)],
+                                    f"Predicted Close ({model_name})": [f"{p:,.2f}" for p in predictions.flatten()]
+                                })
 
-                            # Buat DataFrame untuk hasil prediksi dengan "Hari ke"
-                            df_future_rnn = pd.DataFrame({
-                                "Prediksi Hari Ke": [f"Hari ke-{i+1}" for i in range(future_days)],
-                                "Predicted Close (RNN)": predicted_price_rnn.flatten()
-                            })
-                            
-                            df_future_lstm = pd.DataFrame({
-                                "Prediksi Hari Ke": [f"Hari ke-{i+1}" for i in range(future_days)],
-                                "Predicted Close (LSTM)": predicted_price_lstm.flatten()
-                            })
-
-                            # Format harga saham dengan dua angka desimal
-                            df_future_rnn["Predicted Close (RNN)"] = df_future_rnn["Predicted Close (RNN)"].apply(lambda x: f"{x:,.2f}")
-                            df_future_lstm["Predicted Close (LSTM)"] = df_future_lstm["Predicted Close (LSTM)"].apply(lambda x: f"{x:,.2f}")
-
-                            # Set index mulai dari 1
-                            df_future_rnn.index = range(1, len(df_future_rnn) + 1)
-                            df_future_lstm.index = range(1, len(df_future_lstm) + 1)
-
-                            # Gabungkan hasil prediksi RNN dan LSTM
+                            df_future_rnn = create_prediction_df("RNN", pred_rnn)
+                            df_future_lstm = create_prediction_df("LSTM", pred_lstm)
                             df_combined_future = pd.merge(df_future_rnn, df_future_lstm, on="Prediksi Hari Ke")
+                            df_combined_future.index = range(1, len(df_combined_future) + 1)
 
-                            # Buat container kosong untuk pesan sukses
-                            success_placeholder = st.empty()
-
-                            # Tampilkan pesan sukses
-                            success_placeholder.success(f"✅ Berhasil memprediksi {future_days} hari ke depan menggunakan model RNN dan LSTM!")
-
-                            # Tampilkan DataFrame dengan format yang lebih rapi
+                            # Tampilkan hasil
+                            st.success(f"✅ Berhasil memprediksi {future_days} hari ke depan menggunakan model RNN dan LSTM!")
                             st.dataframe(df_combined_future)
 
-                            # Ambil data testing
-                            test_data = test_data[close_col].values  
+                            # Persiapan visualisasi
                             df.index = pd.to_datetime(df.index)
+                            test_data = test_data[close_col].values  
                             test_dates = df.index[-len(test_data):].strftime('%Y-%m-%d').values
-                            
-                            # Generate the future dates for prediction (starting from the last date in df)
                             last_date = df.index[-1]
                             future_dates = [last_date + pd.Timedelta(days=i) for i in range(1, future_days + 1)]
-                            
-                            # Buat DataFrame untuk data testing
-                            df_test = pd.DataFrame({
-                                "Tanggal": test_dates,
-                                "Harga Aktual": test_data
-                            })
 
-                            # Buat DataFrame prediksi hari ke depan
-                            df_pred_rnn = pd.DataFrame({
-                                "Tanggal": future_dates,
-                                "Prediksi RNN": predicted_price_rnn.flatten()
-                            })
+                            df_test = pd.DataFrame({"Tanggal": test_dates, "Harga Aktual": test_data})
+                            df_pred_rnn = pd.DataFrame({"Tanggal": future_dates, "Prediksi RNN": pred_rnn.flatten()})
+                            df_pred_lstm = pd.DataFrame({"Tanggal": future_dates, "Prediksi LSTM": pred_lstm.flatten()})
+                            df_pred_rnn["Prediksi Hari Ke"] = df_pred_lstm["Prediksi Hari Ke"] = [f"{i+1}" for i in range(future_days)]
 
-                            df_pred_lstm = pd.DataFrame({
-                                "Tanggal": future_dates,
-                                "Prediksi LSTM": predicted_price_lstm.flatten()
-                            })
-
-                            df_pred_rnn["Prediksi Hari Ke"] = [f"{i+1}" for i in range(future_days)]
-                            df_pred_lstm["Prediksi Hari Ke"] = [f"{i+1}" for i in range(future_days)]
-                            # Gabungkan semua ke dalam satu plotly figure
+                            # Plot
                             fig = go.Figure()
 
-                            # Plot data testing (aktual)
                             fig.add_trace(go.Scatter(
                                 x=df_test["Tanggal"], y=df_test["Harga Aktual"],
-                                mode='lines',  # Ubah menjadi hanya 'lines'
-                                name='Data Aktual',
-                                line=dict(color='#636EFA'),
-                                hovertemplate='Date: %{x}<br>Close: %{y:,.2f}<extra></extra>' 
+                                mode='lines', name='Data Aktual', line=dict(color='#636EFA', width=1),
+                                hovertemplate='Date: %{x}<br>Close: %{y:,.2f}<extra></extra>'
                             ))
-
-                            # Plot prediksi RNN
                             fig.add_trace(go.Scatter(
-                                x=df_pred_rnn["Tanggal"],
-                                y=df_pred_rnn["Prediksi RNN"],
-                                mode='lines',
-                                name=f'Prediksi RNN {future_days} Hari',
-                                line=dict(color='red'),
+                                x=df_pred_rnn["Tanggal"], y=df_pred_rnn["Prediksi RNN"],
+                                mode='lines', name=f'Prediksi RNN {future_days} Hari', line=dict(color='red', width=1),
                                 customdata=df_pred_rnn["Prediksi Hari Ke"],
                                 hovertemplate='<br>Prediksi Hari Ke: %{customdata}<br>Close: %{y:,.2f}<extra></extra>'
                             ))
-
-                            # Plot prediksi LSTM
                             fig.add_trace(go.Scatter(
-                                x=df_pred_lstm["Tanggal"],
-                                y=df_pred_lstm["Prediksi LSTM"],
-                                mode='lines',
-                                name=f'Prediksi LSTM {future_days} Hari',
-                                line=dict(color='#33C1FF'),
+                                x=df_pred_lstm["Tanggal"], y=df_pred_lstm["Prediksi LSTM"],
+                                mode='lines', name=f'Prediksi LSTM {future_days} Hari', line=dict(color='#33C1FF', width=1),
                                 customdata=df_pred_lstm["Prediksi Hari Ke"],
-                                hovertemplate='<br>Prediksi Hari Ke: %{customdata}<br>Close: %{y:.2f}<extra></extra>'
+                                hovertemplate='<br>Prediksi Hari Ke: %{customdata}<br>Close: %{y:,.2f}<extra></extra>'
                             ))
 
-                            # Layout yang lebih elegan dengan legend di sebelah kanan
                             fig.update_layout(
                                 title=f"Harga Aktual dan Prediksi {future_days} Hari Ke Depan Menggunakan Model RNN dan LSTM",
-                                xaxis_title="Tanggal",
-                                yaxis_title="Harga Saham",
-                                legend=dict(
-                                    x=1.05,  # Posisi legenda di sebelah kanan
-                                    y=1,  # Posisi vertikal di atas
-                                    xanchor='left',  # Menyusun anchor ke kiri
-                                    yanchor='top',  # Menyusun anchor ke atas
-                                    bgcolor='rgba(255,255,255,0)', 
-                                    bordercolor='Black'
-                                ),
-                                template='plotly_white'
+                                xaxis_title="Tanggal", yaxis_title="Harga Saham",
+                                legend=dict(x=1.05, y=1, xanchor='left', yanchor='top', bgcolor='rgba(255,255,255,0)', bordercolor='Black'),
+                                template='plotly_white',
+                                height=500
                             )
 
-                            # Tampilkan grafik di Streamlit
-                            st.plotly_chart(fig, use_container_width=True)                            
+                            st.plotly_chart(fig, use_container_width=True)                        
                             
     # ====================== COMPARISON ======================
     elif selected_tab == "Comparison":
@@ -746,7 +679,8 @@ def main():
                                             mode='lines', 
                                             name=ticker,
                                             hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close: %{y:,.2f}",
-                                            text=ticker
+                                            text=ticker,
+                                            line=dict(width=1)
                                           ))
                 # Layout
                 fig.update_layout(title='Perbandingan Harga Saham',
