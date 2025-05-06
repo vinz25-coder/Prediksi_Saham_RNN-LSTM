@@ -1,0 +1,1 @@
+Layer 'dropout_1' (Dropout) tidak memiliki bobot atau bias.

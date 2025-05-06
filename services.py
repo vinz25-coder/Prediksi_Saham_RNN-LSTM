@@ -260,7 +260,7 @@ def statistics(data, stock_info, selected_stock):
         col4, col5, col6 = st.columns(3)
         with col4:
             st.metric(label="⭑ 52-Week Low", value=format_value(stock_info.get("52-Week Low")))
-            st.metric(label="⭑ Dividend Yield", value=format_value(stock_info.get("Dividend Yield")))
+            st.metric(label="⭑ Dividend Yield", value=f"{format_value(stock_info.get('Dividend Yield'))}%")
             st.metric(label="⭑ Profit Margin", value=format_value(stock_info.get("Profit Margin"), is_percentage=True))
             st.metric(label="⭑ Return on Equity (ROE)", value=format_value(stock_info.get("ROE"), is_percentage=True))
 
