@@ -1,3 +1,6 @@
 [Dense] Bias ke-1:
 [0.1271351]
 
+[Dense] Bias ke-1:
+[0.1271351]
+

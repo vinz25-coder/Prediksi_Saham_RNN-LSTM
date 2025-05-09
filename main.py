@@ -612,46 +612,93 @@ def main():
 
                             # Persiapan visualisasi
                             df.index = pd.to_datetime(df.index)
-                            test_data = test_data[close_col].values  
-                            test_dates = df.index[-len(test_data):].strftime('%Y-%m-%d').values
-                            last_date = df.index[-1]
-                            future_dates = [last_date + pd.Timedelta(days=i) for i in range(1, future_days + 1)]
 
-                            df_test = pd.DataFrame({"Tanggal": test_dates, "Harga Aktual": test_data})
-                            df_pred_rnn = pd.DataFrame({"Tanggal": future_dates, "Prediksi RNN": pred_rnn.flatten()})
-                            df_pred_lstm = pd.DataFrame({"Tanggal": future_dates, "Prediksi LSTM": pred_lstm.flatten()})
-                            df_pred_rnn["Prediksi Hari Ke"] = df_pred_lstm["Prediksi Hari Ke"] = [f"{i+1}" for i in range(future_days)]
+                            # Data testing (sebelum prediksi)
+                            test_data_values = test_data[close_col].values  
+                            test_dates = df.index[-len(test_data_values):]
+                            df_test = pd.DataFrame({"Tanggal": test_dates, "Harga Aktual": test_data_values})
+
+                            # Ambil data harga aktual dari Yahoo Finance (untuk tanggal setelah testing)
+                            last_date = df.index[-1]
+                            start_actual = (last_date + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
+                            end_actual = (last_date + pd.Timedelta(days=14)).strftime('%Y-%m-%d')  # Ambil buffer tanggal lebih panjang
+
+                            actual_data = yf.download(selected_stock, start=start_actual, end=end_actual)
+                            actual_data = actual_data.reset_index()[["Date", "Close"]]
+                            actual_data.columns = ["Tanggal", "Harga Aktual"]
+                            actual_data["Tanggal"] = pd.to_datetime(actual_data["Tanggal"])
+
+                            # Ambil hanya sejumlah future_days
+                            actual_future_dates = actual_data["Tanggal"].iloc[:future_days].values
+                            actual_future_prices = actual_data["Harga Aktual"].iloc[:future_days].values
+
+                            # Pastikan prediksi disesuaikan dengan jumlah data aktual
+                            pred_rnn_values = pred_rnn.flatten()[:len(actual_future_dates)]
+                            pred_lstm_values = pred_lstm.flatten()[:len(actual_future_dates)]
+
+                            # Gabungkan data testing dan prediksi dalam satu dataframe untuk memastikan tidak ada celah
+                            df_pred_all = pd.DataFrame({
+                                "Tanggal": actual_future_dates,
+                                "Harga Aktual": actual_future_prices,
+                                "Prediksi RNN": pred_rnn_values,
+                                "Prediksi LSTM": pred_lstm_values,
+                                "Prediksi Hari Ke": [f"Hari Ke-{i+1}" for i in range(len(actual_future_dates))]
+                            })
+
+                            # Gabungkan data aktual testing dengan prediksi
+                            df_all = pd.concat([df_test, df_pred_all], ignore_index=True)
 
                             # Plot
                             fig = go.Figure()
 
+                            # 1. Data aktual sebelum prediksi (testing)
                             fig.add_trace(go.Scatter(
-                                x=df_test["Tanggal"], y=df_test["Harga Aktual"],
-                                mode='lines', name='Data Aktual', line=dict(color='#636EFA', width=1),
-                                hovertemplate='Date: %{x}<br>Close: %{y:,.2f}<extra></extra>'
-                            ))
-                            fig.add_trace(go.Scatter(
-                                x=df_pred_rnn["Tanggal"], y=df_pred_rnn["Prediksi RNN"],
-                                mode='lines', name=f'Prediksi RNN {future_days} Hari', line=dict(color='red', width=1),
-                                customdata=df_pred_rnn["Prediksi Hari Ke"],
-                                hovertemplate='<br>Prediksi Hari Ke: %{customdata}<br>Close: %{y:,.2f}<extra></extra>'
-                            ))
-                            fig.add_trace(go.Scatter(
-                                x=df_pred_lstm["Tanggal"], y=df_pred_lstm["Prediksi LSTM"],
-                                mode='lines', name=f'Prediksi LSTM {future_days} Hari', line=dict(color='#33C1FF', width=1),
-                                customdata=df_pred_lstm["Prediksi Hari Ke"],
-                                hovertemplate='<br>Prediksi Hari Ke: %{customdata}<br>Close: %{y:,.2f}<extra></extra>'
+                                x=df_all["Tanggal"], y=df_all["Harga Aktual"],
+                                mode='lines', name='Data Aktual (Testing)', 
+                                line=dict(color='#636EFA', width=1),
+                                hovertemplate='Tanggal: %{x}<br>Harga Aktual: %{y:,.2f}<extra></extra>'
                             ))
 
+                            # 2. Prediksi RNN
+                            fig.add_trace(go.Scatter(
+                                x=df_pred_all["Tanggal"], y=df_pred_all["Prediksi RNN"],
+                                mode='lines+markers', name=f'Prediksi RNN {future_days} Hari', 
+                                line=dict(color='red', width=1, dash='dot'),
+                                marker=dict(size=4, color='red'),
+                                hovertemplate='Tanggal: %{x}<br>Prediksi RNN: %{y:,.2f}<extra></extra>'
+                            ))
+
+                            # 3. Prediksi LSTM
+                            fig.add_trace(go.Scatter(
+                                x=df_pred_all["Tanggal"], y=df_pred_all["Prediksi LSTM"],
+                                mode='lines+markers', name=f'Prediksi LSTM {future_days} Hari', 
+                                line=dict(color='#33C1FF', width=1, dash='dot'),
+                                marker=dict(size=4, color='#33C1FF'),
+                                hovertemplate='Tanggal: %{x}<br>Prediksi LSTM: %{y:,.2f}<extra></extra>'
+                            ))
+
+                            # 4. Harga aktual dari Yahoo Finance
+                            fig.add_trace(go.Scatter(
+                                x=df_pred_all["Tanggal"], y=df_pred_all["Harga Aktual"],
+                                mode='lines+markers', name='Real Price (Yahoo Finance)',
+                                line=dict(color='yellow', width=1, dash='dot'),
+                                marker=dict(size=4, color='yellow'),
+                                hovertemplate='Tanggal: %{x}<br>Harga Aktual: %{y:,.2f}<extra></extra>'
+                            ))
+
+                            # Layout
                             fig.update_layout(
-                                title=f"Harga Aktual dan Prediksi {future_days} Hari Ke Depan Menggunakan Model RNN dan LSTM",
-                                xaxis_title="Tanggal", yaxis_title="Harga Saham",
-                                legend=dict(x=1.05, y=1, xanchor='left', yanchor='top', bgcolor='rgba(255,255,255,0)', bordercolor='Black'),
+                                title=f"Prediksi {len(actual_future_dates)} hari ke depan harga saham {selected_stock}",
+                                xaxis_title="Tanggal",
+                                yaxis_title="Harga Saham",
+                                legend=dict(x=1.05, y=1, xanchor='left', yanchor='top'),
                                 template='plotly_white',
                                 height=500
                             )
 
-                            st.plotly_chart(fig, use_container_width=True)                        
+                            # Tampilkan grafik
+                            st.plotly_chart(fig, use_container_width=True)
+           
                             
     # ====================== COMPARISON ======================
     elif selected_tab == "Comparison":
