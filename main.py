@@ -188,7 +188,7 @@ def main():
             x_train_df = pd.DataFrame(data['x_train'][:, :, 0]).applymap(lambda x: f"{x:.4f}")
             x_train_df["y_train"] = data['y_train'].flatten()
             
-            st.markdown("**Normalisasi Data**")
+            st.markdown("**Normalisasi Data Pada Data Training :**")
             st.dataframe(x_train_df)
             return train_data, val_data, test_data, data
        
@@ -240,7 +240,7 @@ def main():
         
         def evaluate_model(y_true, y_pred):
             mse = mean_squared_error(y_true, y_pred)
-            rmse = np.sqrt(mse)
+            rmse = root_mean_squared_error(y_true, y_pred)
             mae = mean_absolute_error(y_true, y_pred)
             return mse, rmse, mae
 
@@ -275,7 +275,7 @@ def main():
             )
             fig.update_layout(
                 title="Visualisasi Training, Validation, Testing, dan Prediksi",
-                xaxis_title="Date",
+                xaxis_title="Tanggal",
                 yaxis_title="Harga Saham",
                 height=650,
                 hovermode="x",
@@ -328,7 +328,7 @@ def main():
             )
             fig.update_layout(
                 title=f"Prediksi pada Model {model_name}",
-                xaxis_title="Date",
+                xaxis_title="Tanggal",
                 yaxis_title="Harga Saham",
                 height=650,
                 hovermode="x",
@@ -656,7 +656,7 @@ def main():
                                 x=df_all["Tanggal"], y=df_all["Harga Aktual"],
                                 mode='lines', name='Data Aktual (Testing)', 
                                 line=dict(color='#636EFA', width=1),
-                                hovertemplate='Tanggal: %{x}<br>Harga Aktual: %{y:,.2f}<extra></extra>'
+                                hovertemplate='Date: %{x}<br>Close Price: %{y:,.2f}<extra></extra>'
                             ))
 
                             # 2. Prediksi RNN
@@ -665,7 +665,7 @@ def main():
                                 mode='lines+markers', name=f'Prediksi RNN {future_days} Hari', 
                                 line=dict(color='red', width=1, dash='dot'),
                                 marker=dict(size=4, color='red'),
-                                hovertemplate='Tanggal: %{x}<br>Prediksi RNN: %{y:,.2f}<extra></extra>'
+                                hovertemplate='Date: %{x}<br>Prediksi RNN: %{y:,.2f}<extra></extra>'
                             ))
 
                             # 3. Prediksi LSTM
@@ -674,16 +674,16 @@ def main():
                                 mode='lines+markers', name=f'Prediksi LSTM {future_days} Hari', 
                                 line=dict(color='#33C1FF', width=1, dash='dot'),
                                 marker=dict(size=4, color='#33C1FF'),
-                                hovertemplate='Tanggal: %{x}<br>Prediksi LSTM: %{y:,.2f}<extra></extra>'
+                                hovertemplate='Date: %{x}<br>Prediksi LSTM: %{y:,.2f}<extra></extra>'
                             ))
 
                             # 4. Harga aktual dari Yahoo Finance
                             fig.add_trace(go.Scatter(
                                 x=df_pred_all["Tanggal"], y=df_pred_all["Harga Aktual"],
-                                mode='lines+markers', name='Real Price (Yahoo Finance)',
+                                mode='lines+markers', name=f'Real Price {future_days} Hari (Yahoo Finance)',
                                 line=dict(color='yellow', width=1, dash='dot'),
                                 marker=dict(size=4, color='yellow'),
-                                hovertemplate='Tanggal: %{x}<br>Harga Aktual: %{y:,.2f}<extra></extra>'
+                                hovertemplate='Date: %{x}<br>Close Price: %{y:,.2f}<extra></extra>'
                             ))
 
                             # Layout
@@ -693,7 +693,7 @@ def main():
                                 yaxis_title="Harga Saham",
                                 legend=dict(x=1.05, y=1, xanchor='left', yanchor='top'),
                                 template='plotly_white',
-                                height=500
+                                height=550
                             )
 
                             # Tampilkan grafik
@@ -725,7 +725,7 @@ def main():
                                             y=data[ticker], 
                                             mode='lines', 
                                             name=ticker,
-                                            hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close: %{y:,.2f}",
+                                            hovertemplate="📅 Date: %{x|%Y-%m-%d}<br> Close Price: %{y:,.2f}",
                                             text=ticker,
                                             line=dict(width=1)
                                           ))
