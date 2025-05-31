@@ -52,3 +52,15 @@ Dataset terkait harga saham diperoleh melalui situs web **Yahoo Finance**: (http
   ```
 
 ---
+
+## Important Requirements
+- python == `3.12.7`
+- tensorflow == `2.19.0`
+- scikit-learn == `1.5.0`
+- pandas == `2.2.3`
+- numpy == `2.1.3`
+- matplotlib == `3.10.1`
+- streamlit == `1.44.1`
+- yfinance == `0.2.58`
+
+---
