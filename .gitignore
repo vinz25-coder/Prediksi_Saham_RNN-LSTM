@@ -1,9 +1,8 @@
 # Abaikan virtual environment
-env/
+venv311/
 .venv/
-ENV/
-.VENV/
-.ENV/
+venv/
+__pycache__/
 
 # Abaikan direktori konfigurasi editor
 .vscode/
